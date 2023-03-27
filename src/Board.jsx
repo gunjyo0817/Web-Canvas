@@ -16,7 +16,7 @@ export default function Board() {
     const [clickY, setClickY] = useState(0)
     const [lastX, setLastX] = useState(0)
     const [lastY, setLastY] = useState(0)
-    const [savedShape, setSavedShape] = useState<HTMLImageElement>(new Image());
+    const [savedShape, setSavedShape] = useState(new Image());
 
     const saveShape = () => {
         const dataUrl = painter.current.toDataURL();
