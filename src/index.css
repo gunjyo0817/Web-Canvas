@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+.canvas{
+    height: 400px;
+}
 .tool-board1 {
     left: 5%;
     border: 1px solid black;
