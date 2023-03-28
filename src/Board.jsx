@@ -1,23 +1,91 @@
 import {useRef, useState} from "react";
 import ToolButton from "./ToolButton";
+import {SketchPicker} from "react-color";
 
 export default function Board() {
     const painter = useRef()
     const [initial, setInitial] = useState(true)
-    const [tool, setTool] = useState('rectangle')
-    const [color, setColor] = useState('black')
+    const [tool, setTool] = useState('brush')
+    const [fontColor, setFontColor] = useState('#000000')
     const [size, setSize] = useState(10)
     const [font, setFont] = useState('sans-serif')
-    const [drawWidth, setdrawWidth] = useState(5)
-    const [eraserWidth, setEraserWidth] = useState(20)
+    const [drawWidth, setDrawWidth] = useState(3)
     const [isDrawing, setIsDrawing] = useState(false)
     const [isFill, setIsFill] = useState(false)
     const [clickX, setClickX] = useState(0)
     const [clickY, setClickY] = useState(0)
-    const [lastX, setLastX] = useState(0)
-    const [lastY, setLastY] = useState(0)
     const [savedShape, setSavedShape] = useState(new Image());
+    const [redoStack, setRedoStack] = useState([])
+    const [undoStack, setUndoStack] = useState([])
+    const [textContent, setTextContent] = useState('')
+    const [isTexting, setIsTexting] = useState(false)
+    // const [textBox, setTextBox] = useState('')
+    const textBox = document.createElement('input')
 
+    const presetColors = [
+        '#000000',
+        '#ffffff',
+        '#34d399',
+        '#22d3ee',
+        '#a78bfa',
+        '#fb7185',
+        '#fde047',
+        ]
+    // const addText = () => {
+    //     const x = clickX
+    //     const y = clickY
+    //     if(isTexting){
+    //         textContest = textBox.value
+    //     }
+    //
+    // }
+    // const addText = () => {
+    //     const input = document.createElement('input')
+    //     input.type = 'text'
+    //     input.style.position = 'absolute'
+    //     input.style.left = clickX -4 + 'px'
+    //     input.style.top = clickY -4 + 'px'
+    //     input.style.fontSize = size + 'px'
+    //     input.style.fontFamily = font
+    //     input.style.color = color
+    //     input.onkeydown = (e) => {
+    //         if(e.key === 'Enter'){
+    //             const ctx = painter.current.getContext('2d')
+    //             ctx.font= `${size} ${font}`
+    //             ctx.fillText(input.value, clickX, clickY)
+    //             input.remove()
+    //         }
+    //     }
+    //     document.body.appendChild(input)
+    // }
+    const upload = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/*'
+        input.onchange = (e) => {
+            const file = e.target.files[0]
+            const reader = new FileReader()
+            reader.readAsDataURL(file)
+            reader.onload = (e) => {
+                const img = new Image()
+                img.src = e.target.result
+                img.width = painter.current.width
+                img.height = painter.current.height
+                img.onload = () => {
+                    const ctx = painter.current.getContext('2d')
+                    ctx.drawImage(img, 0, 0)
+                }
+            }
+        }
+        input.click()
+    }
+    const download = () => {
+        const dataUrl = painter.current.toDataURL();
+        const a = document.createElement('a')
+        a.href = dataUrl
+        a.download = 'canvas.png'
+        a.click()
+    }
     const saveShape = () => {
         const dataUrl = painter.current.toDataURL();
         const img = new Image()
@@ -25,136 +93,174 @@ export default function Board() {
         setSavedShape(img)
     }
 
-    const loadCanvas = () => {
+    const loadShape = () => {
         const ctx = painter.current.getContext('2d')
         ctx.drawImage(savedShape, 0, 0)
     }
-    const onClick = (e) => {
-        console.log('click')
-        setTool(e.target.id)
+
+    const saveCanvas = () => {
+        const dataUrl = painter.current.toDataURL();
+        const img = new Image()
+        img.src = dataUrl
+        setUndoStack([...undoStack, img])
     }
+
     const toolClick = (tool) => {
         const ctx = painter.current.getContext('2d')
         if(tool === 'reset'){
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            setTool('brush')
             console.log(painter.current.width)
+
         }
-        // else if(tool === 'undo'){
-        //     ctx.clearRect(0, 0, painter.current.width, painter.current.height)
-        //     // loadCanvas()
-        // }
-        // else if(tool === 'redo'){
-        //     ctx.clearRect(0, 0, painter.current.width, painter.current.height)
-        //
-        // }
+        else if(tool === 'undo'){
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            const img = undoStack.pop()
+            if(!img) return
+            setRedoStack([...redoStack, img])
+            ctx.drawImage(img, 0, 0)
+            setTool('brush')
+        }
+        else if(tool === 'redo'){
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            const img = redoStack.pop()
+            if(!img) return
+            setUndoStack([...undoStack, img])
+            ctx.drawImage(img, 0, 0)
+            setTool('brush')
+        }
+        else if(tool === 'download'){
+            download()
+            setTool('brush')
+        }
+        else if(tool === 'upload'){
+            upload()
+            setTool('brush')
+        }
+        else if(tool === 'isFill'){
+            setIsFill(!isFill)
+            setTool('brush')
+        }
     }
 
     const onMouseDown = (e) => {
         const ctx = painter.current.getContext('2d')
-        // if(initial){
-        //     // setInitial(false)
-        // }
         console.log('mouse down')
         setIsDrawing(true)
-        setLastX(e.nativeEvent.offsetX)
-        setLastY(e.nativeEvent.offsetY)
         setClickX(e.nativeEvent.offsetX)
         setClickY(e.nativeEvent.offsetY)
         ctx.beginPath()
+        if(tool === 'text'){
+            if(isTexting){
+                setTextContent(textBox.value)
+                setIsTexting(false)
+                textBox.style['z-index'] = 1;
+                textBox.value = "";
+                textBox.style.left = clickX + 'px';
+                textBox.style.top = clickY + 'px';
+                ctx.font= `${size} ${font}`
+                ctx.fillText(textContent, clickX, clickY)
+                setTextContent('')
+                saveCanvas()
+            }
+            else{
+                setIsTexting(true)
+                textBox.style['z-index'] = 6;
+                console.log(textBox)
+            }
+        }
     }
     const onMousemove = (e) => {
         console.log('mouse move')
         if (!isDrawing) return;
         const ctx = painter.current.getContext('2d')
-        ctx.strokeStyle = color
-        ctx.width = drawWidth
+        ctx.strokeStyle = fontColor
+        ctx.fillStyle = fontColor
+        ctx.lineWidth = drawWidth
+        console.log(drawWidth)
         ctx.font= `${size} ${font}`
         const x = e.nativeEvent.offsetX
         const y = e.nativeEvent.offsetY
         if (tool === 'brush') {
             ctx.lineTo(x, y)
         } else if (tool === 'eraser') {
-            ctx.clearRect(x, y, eraserWidth, eraserWidth)
-
+            ctx.clearRect(x, y, drawWidth, drawWidth)
         } else if (tool === 'rectangle') {
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
             ctx.beginPath()
             if(isFill) {ctx.fillRect(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY)}
             else {ctx.strokeRect(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY)}
-            // ctx.strokeRect(clickX, clickY, x - clickX, y - clickY)
-            ctx.stroke()
         } else if (tool === 'circle') {
-            //draw a circle, but don't erase the previous one, dont't clearRect
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
             ctx.beginPath()
-            ctx.arc(lastX, lastY, Math.abs(x - clickX), 0, Math.PI * 2)
-            ctx.stroke()
-        } else if (tool === 'triangle') {
-            //draw a triangle
-            ctx.beginPath()
-            ctx.moveTo(lastX, lastY)
-            ctx.lineTo(x, y)
-            ctx.lineTo(lastX, y)
-            ctx.lineTo(lastX, lastY)
-            ctx.stroke()
-        } else if (tool === 'line') {
-            //draw a line
+            ctx.arc(clickX, clickY, Math.abs(x - clickX), 0, Math.PI * 2)
+            if(isFill) ctx.fill()
+        } else if (tool === 'equal-triangle') {
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
             ctx.beginPath()
             ctx.moveTo(clickX, clickY)
             ctx.lineTo(x, y)
-            ctx.stroke()
+            ctx.lineTo(clickX - (x - clickX), y)
+            ctx.lineTo(clickX, clickY)
+            if(isFill) ctx.fill()
+        } else if(tool === 'triangle'){
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
+            ctx.beginPath()
+            ctx.moveTo(clickX, clickY)
+            ctx.lineTo(x, y)
+            ctx.lineTo(clickX, y)
+            ctx.lineTo(clickX, clickY)
+            if(isFill) ctx.fill()
         }
-        setLastY(x)
-        setLastX(y)
+        else if (tool === 'line') {
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
+            ctx.beginPath()
+            ctx.moveTo(clickX, clickY)
+            ctx.lineTo(x, y)
+        }
+        else if(tool === 'curve'){
+            ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            loadShape()
+            ctx.beginPath()
+            ctx.moveTo(y, clickY)
+            ctx.quadraticCurveTo(x,y,clickX,clickY)
+        }
         ctx.stroke()
     }
     const onMouseUp = () => {
         console.log('mouse up')
         const ctx = painter.current.getContext('2d')
         setIsDrawing(false)
-
+        if(tool === 'text' || tool === 'brush' || tool === 'eraser' || tool === 'line' || tool === 'curve' || tool === 'rectangle' || tool === 'circle' || tool === 'equal-triangle' || tool === 'triangle') {
+            saveShape()
+            saveCanvas()
+        }
     }
     return (
         <div className="flex justify-between my-8">
-            <div className="tool-board1">
-                <h1>he</h1>
-                {['undo','redo', 'text', 'download', 'upload'].map(
-                    (tool) =>
-                        (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
-                            setTool(tool)
-                            toolClick(tool)
-                        }
-                        }/>)
-                )}
-                {tool}
-            </div>
-            <div className="canvas">
-                <canvas
-                    ref={painter}
-                    onMouseDown={onMouseDown}
-                    onMouseMove={onMousemove}
-                    onMouseUp={onMouseUp}
-                    style={{
-                        position: 'relative',
-                        backgroundColor: 'white',
-                    }}
-                    width={window.innerWidth * 0.4}
-                    height={400}
-                />
-            </div>
-            <div className="tool-board2 flex justify-center">
-                <h1>hehe</h1>
-                <div>
-                    {['brush','eraser','fill', 'line', 'reset'].map(
-                    (tool) =>
-                        (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
-                            setTool(tool)
-                            toolClick(tool)
-                        }
-                        }/>)
-                    )}
+            <div className="tool-board1 flex justify-between py-6">
+                <div className="max-w-2xl ml-6 text-black">
+                    <SketchPicker
+                        z-index={5}
+                        width={175}
+                        color={fontColor}
+                        presetColors={presetColors}
+                        onChange={(color) => {
+                            setFontColor(color.hex);
+                        }}/>
+                    <input type="range" min="1" max="20"className="py-8 px-8"
+                           onInput={(e) => { console.log(e.target.value); setDrawWidth(e.target.value) }}
+                           onChange={(e) => { setDrawWidth(e.target.value) }}
+                    />
+
                 </div>
-                <div>
-                    {['isFill','rectangle', 'circle', 'triangle', 'reset'].map(
+                <div className="flex flex-col mr-4">
+                    {['isFill','undo','redo', 'reset', 'download'].map(
                         (tool) =>
                             (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
                                 setTool(tool)
@@ -162,11 +268,98 @@ export default function Board() {
                             }
                             }/>)
                     )}
+                    <p className="text-white text-lg py-4 pr-4">粗細</p>
                 </div>
-                {tool}
+            </div>
+
+            <div className="canvas">
+                <div className="relative">
+                    <canvas
+                        ref={painter}
+                        onMouseDown={onMouseDown}
+                        onMouseMove={onMousemove}
+                        onMouseUp={onMouseUp}
+                        style={{
+                            position: 'relative',
+                            backgroundColor: 'white',
+                            cursor:`url(${tool}.png), auto`,
+                        }}
+                        width={window.innerWidth * 0.4}
+                        height={400}
+                    />
+                    {/*<input name=${textBox} type="text" className="text-box"></input>*/}
+                    <input name={textBox} type="text" className="text-box border-2 border-black" style={{color:fontColor, fontSize:size, fontFamily:font,position:"absolute"}}></input>
+                </div>
+
+            </div>
+            <div className="tool-board2 flex flex-col">
+                <div className="flex justify-between">
+                    <div className="py-6 px-4">
+                        {['brush','eraser','line', 'curve'].map(
+                            (tool) =>
+                                (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
+                                    setTool(tool)
+                                    toolClick(tool)
+                                }
+                                }/>)
+                        )}
+                    </div>
+                    <div className="py-6">
+                        {['rectangle', 'circle', 'equal-triangle','triangle'].map(
+                            (tool) =>
+                                (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
+                                    setTool(tool)
+                                    toolClick(tool)
+                                }
+                                }/>)
+                        )}
+                    </div>
+                    <div className="py-6 px-4">
+                        {['upload', 'text', 'select','triangle'].map(
+                            (tool) =>
+                                (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
+                                    setTool(tool)
+                                    toolClick(tool)
+                                }
+                                }/>)
+                        )}
+                    </div>
+                </div>
+                <div className="">
+                    <div className="flex flex-between px-0">
+                        {/*make font description and selector in same line*/}
+                        <p className="text-white text-lg pl-6 py-1">字體</p>
+                        <div className="pl-10">
+                            <select className="text-black text-lg" onChange={(e) => {setFont(e.target.value)}}>
+                                <option value="Arial">Arial</option>
+                                <option value="Impact">Impact</option>
+                                <option value="Times">Times</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Copperplate">Copperplate</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="flex flex-between px-0 py-4">
+                        <p className="text-white text-lg pl-2">字體大小</p>
+                        <div className="pl-14">
+                            <select className="text-black" onChange={(e) => {setSize(e.target.value)}}>
+                                <option value="12px">12</option>
+                                <option value="14px">14</option>
+                                <option value="16px">16</option>
+                                <option value="18px">18</option>
+                                <option value="20px">20</option>
+                                <option value="22px">22</option>
+                                <option value="24px">24</option>
+                                <option value="26px">26</option>
+                                <option value="28px">28</option>
+                                <option value="30px">30</option>
+                                <option value="32px">32</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
     );
 }
 

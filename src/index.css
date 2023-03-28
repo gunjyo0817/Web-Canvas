@@ -4,20 +4,31 @@
 
 .canvas{
     height: 400px;
+    position: relative;
 }
 .tool-board1 {
     left: 5%;
-    border: 1px solid black;
-    width: 20%;
+    border: 1px solid white;
+    width: 25%;
     height: 400px;
     position:relative;
 }
 /*  make a boarder to 1/3 of the screen ant put it on right*/
 .tool-board2 {
     right:5%;
-    border: 1px solid black;
+    border: 1px solid white;
     width: 20%;
     height: 400px;
     position:relative;
 
+}
+
+.text-box{
+    float: left;
+    position: absolute;
+    font: 28px orbitron;
+    word-break: break-all;
+    background-color: transparent;
+    resize: none;
+    z-index: 1;
 }
