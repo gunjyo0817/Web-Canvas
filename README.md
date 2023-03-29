@@ -118,6 +118,7 @@ The canvas is located in the middle, the drawing menu and settings are on the le
     **Click to download the canvas as a png file.**
 
 * **Other Useful Widgets**
+
 See the *bonus function description* below
 
 
