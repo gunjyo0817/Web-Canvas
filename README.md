@@ -24,8 +24,8 @@
 | Fill/Not Fill                                 | 1~5%     |  Y|
 | Triangle->Right/Equilateral |1~5%| Y|
 | Curve|1~5%| Y|
-| Select and move|1~5%| Y|
-| Save Online|1~5%| Y|
+| Cut and move|1~5%| Y|
+| Save in browser|1~5%| Y|
 
 ---
 
@@ -103,7 +103,6 @@ The canvas is located in the middle, the drawing menu and settings are on the le
     ![](https://i.imgur.com/1IHCd5c.png)   
     
     **Click the counterclockwise icon to undo.
-    
     Click the clockwise icon to redo.**
     
     * ***Image tool***
@@ -114,9 +113,9 @@ The canvas is located in the middle, the drawing menu and settings are on the le
     
     * ***Download***
     
-    **![](https://i.imgur.com/J8FINPo.png)
+    ![](https://i.imgur.com/J8FINPo.png)
     
-    Click to download the canvas as a png file.**
+    **Click to download the canvas as a png file.**
 
 * **Other Useful Widgets**
 See the *bonus function description* below
@@ -155,11 +154,11 @@ In addition to being able to draw straight lines, curves can also be drawn.
 
 **Click it to select the area and cut, and click the canvas and move this area to the position you want**
 
-* ***Save Online***
+* ***Save current state in browser***
 
 ![](https://i.imgur.com/A0a2STQ.png)
 
-**Click to save online, close the browser and open again, it will be restore**
+**Click to save the current canvas in browser, close the browser and open again, it will be restore**
 
 (You can reset if you don't want this history)
 
