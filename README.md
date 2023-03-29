@@ -66,13 +66,13 @@ The canvas is located in the middle, the drawing menu and settings are on the le
     Click to reset the canvas
 
 * **Advanced Tools**
-    * ***Different brush shapes***
-    ![](https://i.imgur.com/ZIhcYew.png)
-    Click the icon to select the tool.
+    * ***Different brush shapes***   
+    ![](https://i.imgur.com/ZIhcYew.png)   
+    Click the icon to select the tool.   
     Drag the cursor to make circles, rectangles, and triangles of different size
     
-    * ***Un/Re-do button***
-    ![](https://i.imgur.com/1IHCd5c.png)
+    * ***Un/Re-do button***   
+    ![](https://i.imgur.com/1IHCd5c.png)   
     **Click the counterclockwise icon to undo.
     Click the clockwise icon to redo.**
     * ***Image tool***
