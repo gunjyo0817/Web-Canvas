@@ -152,7 +152,7 @@ In addition to being able to draw straight lines, curves can also be drawn.
 
 ![](https://i.imgur.com/NYWHTdn.png)
 
-**Click it to select the area and cut, and click the canvas and move this area to the position you want**
+**Click it and drag a rectangle to select this area and cut, and click the canvas and move this area to the position you want**
 
 * ***Save current state in browser***
 
