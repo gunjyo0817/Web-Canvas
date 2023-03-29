@@ -1,13 +1,14 @@
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import ToolButton from "./ToolButton";
 import {SketchPicker} from "react-color";
 
 export default function Board() {
     const painter = useRef()
-    const [initial, setInitial] = useState(true)
+    const userInput = useRef(null)
+    const [isInitial, setIsInitial] = useState(true)
     const [tool, setTool] = useState('brush')
     const [fontColor, setFontColor] = useState('#000000')
-    const [size, setSize] = useState(10)
+    const [size, setSize] = useState("18px")
     const [font, setFont] = useState('sans-serif')
     const [drawWidth, setDrawWidth] = useState(3)
     const [isDrawing, setIsDrawing] = useState(false)
@@ -16,11 +17,13 @@ export default function Board() {
     const [clickY, setClickY] = useState(0)
     const [savedShape, setSavedShape] = useState(new Image());
     const [redoStack, setRedoStack] = useState([])
+
     const [undoStack, setUndoStack] = useState([])
     const [textContent, setTextContent] = useState('')
     const [isTexting, setIsTexting] = useState(false)
-    // const [textBox, setTextBox] = useState('')
-    const textBox = document.createElement('input')
+    const [isHidden , setIsHidden] = useState(true)
+    const [isSelecting, setIsSelecting] = useState(true)
+    const [selectedShape, setSelectedShape] = useState(new Image())
 
     const presetColors = [
         '#000000',
@@ -31,33 +34,19 @@ export default function Board() {
         '#fb7185',
         '#fde047',
         ]
-    // const addText = () => {
-    //     const x = clickX
-    //     const y = clickY
-    //     if(isTexting){
-    //         textContest = textBox.value
-    //     }
-    //
-    // }
-    // const addText = () => {
-    //     const input = document.createElement('input')
-    //     input.type = 'text'
-    //     input.style.position = 'absolute'
-    //     input.style.left = clickX -4 + 'px'
-    //     input.style.top = clickY -4 + 'px'
-    //     input.style.fontSize = size + 'px'
-    //     input.style.fontFamily = font
-    //     input.style.color = color
-    //     input.onkeydown = (e) => {
-    //         if(e.key === 'Enter'){
-    //             const ctx = painter.current.getContext('2d')
-    //             ctx.font= `${size} ${font}`
-    //             ctx.fillText(input.value, clickX, clickY)
-    //             input.remove()
-    //         }
-    //     }
-    //     document.body.appendChild(input)
-    // }
+
+    useEffect(()=>{
+        setIsInitial(false)
+        console.log(undoStack)
+        const ctx = painter.current.getContext('2d')
+        let dataURL = localStorage.getItem(ctx);
+        let saved_img = new Image;
+        saved_img.src = dataURL;
+        saved_img.onload = function () {
+            ctx.drawImage(saved_img, 0, 0);
+        };
+    }, [isInitial])
+
     const upload = () => {
         const input = document.createElement('input')
         input.type = 'file'
@@ -102,7 +91,28 @@ export default function Board() {
         const dataUrl = painter.current.toDataURL();
         const img = new Image()
         img.src = dataUrl
-        setUndoStack([...undoStack, img])
+        console.log('saveCanvas')
+        console.log(undoStack.length)
+        undoStack.push(img)
+        // if(undoStack.length === 0) setUndoStack([img])
+        // else setUndoStack([...undoStack, img])
+        console.log(undoStack)
+        console.log('saveCanvas done')
+        // download()
+    }
+
+    const saveCanvasToRedo = () => {
+        const dataUrl = painter.current.toDataURL();
+        const img = new Image()
+        img.src = dataUrl
+        console.log('saveCanvas')
+        console.log(redoStack.length)
+        redoStack.push(img)
+        // if(undoStack.length === 0) setUndoStack([img])
+        // else setUndoStack([...undoStack, img])
+        console.log(redoStack)
+        console.log('saveCanvas done')
+
     }
 
     const toolClick = (tool) => {
@@ -114,20 +124,27 @@ export default function Board() {
 
         }
         else if(tool === 'undo'){
+            console.log('undo')
+            console.log(undoStack)
+            saveCanvasToRedo()
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+            //undoStack.pop()
+            // saveShape()
             const img = undoStack.pop()
-            if(!img) return
-            setRedoStack([...redoStack, img])
-            ctx.drawImage(img, 0, 0)
+            console.log(undoStack)
+            console.log('undo done')
             setTool('brush')
+            if(!img) return
+            ctx.drawImage(img, 0, 0)
         }
         else if(tool === 'redo'){
+            console.log('redo')
+            saveCanvas()
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
             const img = redoStack.pop()
-            if(!img) return
-            setUndoStack([...undoStack, img])
-            ctx.drawImage(img, 0, 0)
             setTool('brush')
+            if(!img) return
+            ctx.drawImage(img, 0, 0)
         }
         else if(tool === 'download'){
             download()
@@ -141,32 +158,42 @@ export default function Board() {
             setIsFill(!isFill)
             setTool('brush')
         }
+        else if(tool === 'select'){
+            setIsSelecting(true)
+        }
+        else if(tool === 'save'){
+            localStorage.setItem(ctx, painter.current.toDataURL())
+            setTool('brush')
+
+        }
     }
 
     const onMouseDown = (e) => {
+
         const ctx = painter.current.getContext('2d')
         console.log('mouse down')
         setIsDrawing(true)
         setClickX(e.nativeEvent.offsetX)
         setClickY(e.nativeEvent.offsetY)
         ctx.beginPath()
+        if(tool === 'select' || tool === 'text' || tool === 'brush' || tool === 'eraser' || tool === 'line' || tool === 'curve' || tool === 'rectangle' || tool === 'circle' || tool === 'equal-triangle' || tool === 'triangle') {
+            saveCanvas()
+            saveShape()
+        }
         if(tool === 'text'){
             if(isTexting){
-                setTextContent(textBox.value)
                 setIsTexting(false)
-                textBox.style['z-index'] = 1;
-                textBox.value = "";
-                textBox.style.left = clickX + 'px';
-                textBox.style.top = clickY + 'px';
-                ctx.font= `${size} ${font}`
+                setIsHidden(true)
                 ctx.fillText(textContent, clickX, clickY)
-                setTextContent('')
                 saveCanvas()
+                setTextContent('')
             }
             else{
                 setIsTexting(true)
-                textBox.style['z-index'] = 6;
-                console.log(textBox)
+                setIsHidden(false)
+                setTimeout(() => {
+                    userInput.current.focus()
+                }, 50)
             }
         }
     }
@@ -177,20 +204,19 @@ export default function Board() {
         ctx.strokeStyle = fontColor
         ctx.fillStyle = fontColor
         ctx.lineWidth = drawWidth
-        console.log(drawWidth)
         ctx.font= `${size} ${font}`
         const x = e.nativeEvent.offsetX
         const y = e.nativeEvent.offsetY
         if (tool === 'brush') {
             ctx.lineTo(x, y)
         } else if (tool === 'eraser') {
-            ctx.clearRect(x, y, drawWidth, drawWidth)
+            ctx.clearRect(x, y, drawWidth*4, drawWidth*4)
         } else if (tool === 'rectangle') {
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
             loadShape()
             ctx.beginPath()
-            if(isFill) {ctx.fillRect(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY)}
-            else {ctx.strokeRect(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY)}
+            if(isFill) {ctx.fillRect(clickX, clickY, x - clickX, x - clickY)}
+            else {ctx.strokeRect(clickX, clickY, y - clickX, y - clickY)}
         } else if (tool === 'circle') {
             ctx.clearRect(0, 0, painter.current.width, painter.current.height)
             loadShape()
@@ -230,15 +256,42 @@ export default function Board() {
             ctx.moveTo(y, clickY)
             ctx.quadraticCurveTo(x,y,clickX,clickY)
         }
+        else if(tool === 'select'){
+            if(isSelecting){
+                ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+                loadShape()
+                ctx.beginPath()
+                let tmp_color = fontColor
+                ctx.strokeStyle = 'rgb(0, 0, 0,0)'
+                ctx.strokeRect(clickX, clickY, y - clickX, y - clickY)
+                ctx.strokeStyle = tmp_color
+            }
+            else{  //ismoving
+                ctx.clearRect(0, 0, painter.current.width, painter.current.height)
+                loadShape()
+                ctx.putImageData(selectedShape, x, y)
+            }
+        }
         ctx.stroke()
     }
-    const onMouseUp = () => {
+    const onMouseUp = (e) => {
         console.log('mouse up')
         const ctx = painter.current.getContext('2d')
         setIsDrawing(false)
-        if(tool === 'text' || tool === 'brush' || tool === 'eraser' || tool === 'line' || tool === 'curve' || tool === 'rectangle' || tool === 'circle' || tool === 'equal-triangle' || tool === 'triangle') {
-            saveShape()
-            saveCanvas()
+        // if(tool === 'text' || tool === 'brush' || tool === 'eraser' || tool === 'line' || tool === 'curve' || tool === 'rectangle' || tool === 'circle' || tool === 'equal-triangle' || tool === 'triangle') {
+        //     saveCanvas()
+        //     saveShape()
+        // }
+        if(tool === 'select'){
+            if(isSelecting){
+                setIsSelecting(false)
+                setSelectedShape(ctx.getImageData(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY))
+                ctx.clearRect(clickX, clickY, e.nativeEvent.offsetX - clickX, e.nativeEvent.offsetY - clickY);
+
+            }
+            else{
+                setIsSelecting(true)
+            }
         }
     }
     return (
@@ -253,14 +306,16 @@ export default function Board() {
                         onChange={(color) => {
                             setFontColor(color.hex);
                         }}/>
-                    <input type="range" min="1" max="20"className="py-8 px-8"
+                    <input type="range" min="1" max="20" className="py-8" color="text-red-500"
+                           style={{width: '195px'}}
+                           defaultValue={drawWidth}
                            onInput={(e) => { console.log(e.target.value); setDrawWidth(e.target.value) }}
                            onChange={(e) => { setDrawWidth(e.target.value) }}
                     />
 
                 </div>
                 <div className="flex flex-col mr-4">
-                    {['isFill','undo','redo', 'reset', 'download'].map(
+                    {['undo','redo', 'reset', 'download','save'].map(
                         (tool) =>
                             (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
                                 setTool(tool)
@@ -283,19 +338,23 @@ export default function Board() {
                             position: 'relative',
                             backgroundColor: 'white',
                             cursor:`url(${tool}.png), auto`,
+                            // cursor:`url(select.png), auto`,
                         }}
+
                         width={window.innerWidth * 0.4}
                         height={400}
                     />
                     {/*<input name=${textBox} type="text" className="text-box"></input>*/}
-                    <input name={textBox} type="text" className="text-box border-2 border-black" style={{color:fontColor, fontSize:size, fontFamily:font,position:"absolute"}}></input>
+                    <input onChange={e=>{
+                        setTextContent(e.target.value)}
+                    }  type="text" ref={userInput} value={textContent} className={`text-box border-2 border-black absolute ${isHidden && "hidden"}`} style={{color:fontColor, fontSize:size, fontFamily:font,position:"absolute", top:clickY, left:clickX }}></input>
                 </div>
 
             </div>
             <div className="tool-board2 flex flex-col">
                 <div className="flex justify-between">
                     <div className="py-6 px-4">
-                        {['brush','eraser','line', 'curve'].map(
+                        {['brush','eraser','select','isFill'].map(
                             (tool) =>
                                 (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
                                     setTool(tool)
@@ -315,7 +374,7 @@ export default function Board() {
                         )}
                     </div>
                     <div className="py-6 px-4">
-                        {['upload', 'text', 'select','triangle'].map(
+                        {['line', 'curve','upload', 'text'].map(
                             (tool) =>
                                 (<ToolButton src={`/${tool}.png`} key={tool} id={tool} onClick={() => {
                                     setTool(tool)
@@ -342,10 +401,7 @@ export default function Board() {
                     <div className="flex flex-between px-0 py-4">
                         <p className="text-white text-lg pl-2">字體大小</p>
                         <div className="pl-14">
-                            <select className="text-black" onChange={(e) => {setSize(e.target.value)}}>
-                                <option value="12px">12</option>
-                                <option value="14px">14</option>
-                                <option value="16px">16</option>
+                            <select className="text-black" onChange={(e) => {setSize(e.target.value)}} value={size}>
                                 <option value="18px">18</option>
                                 <option value="20px">20</option>
                                 <option value="22px">22</option>

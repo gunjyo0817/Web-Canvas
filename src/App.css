@@ -2,8 +2,9 @@
   text-align: center;
   background-color: #082F64;
   min-height: 100vh;
-  /*display: flex;*/
-  /*position: relative;*/
+  user-select:none; /* standard syntax */
+  -webkit-user-select:none; /* for Chrome、Safari */
+  -moz-user-select:none;  /* for Mozilla、Firefox */
 }
 .canvas-logo{
   height: 15vmin;
@@ -16,7 +17,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+    animation: App-logo-spin infinite 50s linear;
   }
 }
 
