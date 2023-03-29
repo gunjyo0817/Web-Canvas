@@ -37,8 +37,11 @@ The canvas is located in the middle, the drawing menu and settings are on the le
 * **Basic Components**
     * Basic control tools
         * ***Brush***
-        ![](https://i.imgur.com/HTz721J.png)
-        Click the icon to select the tool.
+           
+        ![](https://i.imgur.com/HTz721J.png)   
+        
+        Click the icon to select the tool.  
+        
         Drag the cursor on the canvas to draw.
         
         * ***Eraser***
